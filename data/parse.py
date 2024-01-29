@@ -11,10 +11,11 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils import resample
 from sklearn.metrics import f1_score
-
+from datetime import datetime
+from datetime import date
 
 # read
-df = pd.read_parquet('catB_train.parquet')
+df = pd.read_parquet('/Users/yujinzheng/Downloads/cs2040/Datathon/data/catB_train.parquet')
 original_df = df
 hidden_data = df
 
@@ -30,12 +31,18 @@ df['f_purchase_lh'] = df['f_purchase_lh'].fillna(0)
 
 label_encoder = LabelEncoder()
 df['clttype'] = label_encoder.fit_transform(df['clttype'])
+df['annual_income_est']= label_encoder.fit_transform(df['annual_income_est'])
+df ['cltdob_fix'] = df['cltdob_fix'].replace(to_replace='None', value=np.nan).dropna()
+df['cltdob_fix'] = pd.to_datetime(df['cltdob_fix'], format='%Y-%m-%d')
+def calculate_age(born):
+    today = date.today()
+    return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+df['age'] = df['cltdob_fix'].apply(calculate_age)
+df['age'] = df['age'].dropna()
 
 ### CORRELATION MATRIX
-columns_to_test = ["clttype", "stat_flag", "flg_substandard", "flg_has_health_claim", "flg_is_borderline_standard"
-                   , "flg_is_revised_term", "flg_is_rental_flat", "flg_has_life_claim", "flg_gi_claim", "flg_is_proposal"
-                   , "flg_with_preauthorisation", "is_housewife_retiree", "is_sg_pr", "is_class_1_2"
-                   , "is_dependent_in_at_least_1_policy", "f_purchase_lh"]
+columns_to_test = ["flg_gi_claim","flg_is_proposal","is_housewife_retiree", "is_sg_pr", "is_class_1_2","annual_income_est","n_months_last_bought_products"
+                   ,"flg_latest_being_lapse","recency_lapse", "recency_cancel","tot_inforce_pols","f_mindef_mha","recency_clmcon","recency_giclaim","age","f_purchase_lh"]
 '''
 # Test Correlation matrix
 corr_matrix = df.corr()
@@ -46,7 +53,8 @@ plt.show()
 ### CORRELATION MATRIX
 
 ### CLEANING DATA
-columns_to_keep = ["clttype", "flg_gi_claim", "flg_is_proposal", "is_housewife_retiree", "is_sg_pr", "is_class_1_2", "f_purchase_lh"]
+columns_to_keep = ["flg_gi_claim","flg_is_proposal","is_housewife_retiree", "is_sg_pr", "is_class_1_2","annual_income_est","n_months_last_bought_products"
+                   ,"flg_latest_being_lapse","recency_lapse", "recency_cancel","tot_inforce_pols","f_mindef_mha","recency_clmcon","recency_giclaim","age","f_purchase_lh"]
 
 df = df[columns_to_keep]
 df = df.fillna(0)
@@ -68,7 +76,8 @@ df_upsampled = pd.concat([df_majority, df_minority_upsampled])
 df = df_upsampled
 ### CLEANING DATA
 
-X = df[["clttype", "flg_gi_claim", "flg_is_proposal", "is_housewife_retiree", "is_sg_pr", "is_class_1_2"]]
+X = df[["flg_gi_claim","flg_is_proposal","is_housewife_retiree", "is_sg_pr", "is_class_1_2","annual_income_est","n_months_last_bought_products"
+                   ,"flg_latest_being_lapse","recency_lapse", "recency_cancel","tot_inforce_pols","f_mindef_mha","recency_clmcon","recency_giclaim","age"]]
 y = df["f_purchase_lh"]
 
 # Split the dataset into training and testing sets
@@ -92,9 +101,9 @@ svm_classifier.fit(X_train, y_train)
 
 # Make predictions on the test set
 y_pred = svm_classifier.predict(X_test)
-
 '''
 
+'''
 # Initialize Gaussian Naive Bayes classifier
 clf = GaussianNB()
 
@@ -103,6 +112,7 @@ clf.fit(X_train, y_train)
 
 # Predict on the test set
 y_pred = clf.predict(X_test)
+'''
 
 ## Exploratory Data Analysis
 #summary_stats = df.describe() # Summary
@@ -132,11 +142,11 @@ print(count_0, count_1)
 print(hidden_data["f_purchase_lh"].value_counts())
 hidden_data = hidden_data.drop(columns=["f_purchase_lh"])
 hidden_data['clttype'] = label_encoder.fit_transform(hidden_data['clttype']) 
-columns_to_keep = ["clttype", "flg_gi_claim", "flg_is_proposal", "is_housewife_retiree", "is_sg_pr", "is_class_1_2"]
-
+columns_to_keep = ["flg_gi_claim","flg_is_proposal","is_housewife_retiree", "is_sg_pr", "is_class_1_2","annual_income_est","n_months_last_bought_products"
+                   ,"flg_latest_being_lapse","recency_lapse", "recency_cancel","tot_inforce_pols","f_mindef_mha","recency_clmcon","recency_giclaim","age"]
 hidden_data = hidden_data[columns_to_keep]
 hidden_data = hidden_data.fillna(0)
-result = clf.predict(hidden_data)
+result = svm_classifier.predict(hidden_data)
 count_0 = 0
 count_1 = 0
 for entry in result:
