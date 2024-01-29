@@ -7,7 +7,8 @@ from datetime import datetime
 from datetime import date
 
 # read
-df = pd.read_parquet('/Users/yujinzheng/Downloads/cs2040/Datathon/data/catB_train.parquet')
+df = pd.read_parquet('data/catB_train.parquet')
+print(df["annual_income_est"])
 # Step 1: Clean f_purchase_lh
 df['f_purchase_lh'] = df['f_purchase_lh'].fillna(0)
 label_encoder = LabelEncoder()
@@ -20,6 +21,10 @@ def calculate_age(born):
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 df['age'] = df['cltdob_fix'].apply(calculate_age)
 df['age'] = df['age'].dropna()
+
+print(df["annual_income_est"].unique())
+print(df["age"].unique())
+
 
 
 
